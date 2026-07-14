@@ -1,0 +1,35 @@
+<?php
+
+namespace App\Events;
+
+use App\Http\Resources\CardResource;
+use App\Models\Card;
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class CardMoved implements ShouldBroadcast
+{
+    use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    public function __construct(public Card $card, public string $boardId)
+    {
+    }
+
+    public function broadcastOn(): array
+    {
+        return [new Channel('board.'.$this->boardId)];
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'card.moved';
+    }
+
+    public function broadcastWith(): array
+    {
+        return ['card' => (new CardResource($this->card))->resolve()];
+    }
+}
