@@ -14,9 +14,7 @@ class CardUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public Card $card)
-    {
-    }
+    public function __construct(public Card $card) {}
 
     public function broadcastOn(): array
     {

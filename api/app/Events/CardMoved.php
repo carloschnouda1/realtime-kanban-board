@@ -21,9 +21,7 @@ class CardMoved implements ShouldBroadcastNow
     /**
      * @param  array<int, array{id: int, cards: array<int, array<string, mixed>>}>  $columns
      */
-    public function __construct(public string $boardId, public array $columns)
-    {
-    }
+    public function __construct(public string $boardId, public array $columns) {}
 
     public function broadcastOn(): array
     {

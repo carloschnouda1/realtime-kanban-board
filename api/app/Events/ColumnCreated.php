@@ -14,9 +14,7 @@ class ColumnCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public BoardColumn $column)
-    {
-    }
+    public function __construct(public BoardColumn $column) {}
 
     public function broadcastOn(): array
     {

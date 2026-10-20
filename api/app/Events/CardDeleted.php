@@ -12,9 +12,7 @@ class CardDeleted implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public int $cardId, public string $boardId)
-    {
-    }
+    public function __construct(public int $cardId, public string $boardId) {}
 
     public function broadcastOn(): array
     {

@@ -4,7 +4,7 @@
 // the matching WebSocket events arrive.
 //
 //   API_URL=http://localhost:8000/api REVERB_APP_KEY=local-reverb-key node scripts/e2e.mjs
-import Pusher from 'pusher-js/node';
+import Pusher from 'pusher-js/node.js';
 
 const API = process.env.API_URL ?? 'http://localhost:8000/api';
 const KEY = process.env.REVERB_APP_KEY ?? 'local-reverb-key';
