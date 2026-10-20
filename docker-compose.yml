@@ -22,7 +22,7 @@ x-api-env: &api-env
   REVERB_HOST: reverb
   REVERB_PORT: "8080"
   REVERB_SCHEME: http
-  REVERB_ALLOWED_ORIGINS: ${FRONTEND_URL:-http://localhost:3000}
+  REVERB_ALLOWED_ORIGINS: ${REVERB_ALLOWED_ORIGINS:-${FRONTEND_URL:-http://localhost:3000}}
 
 services:
   api:

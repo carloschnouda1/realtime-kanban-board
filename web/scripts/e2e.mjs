@@ -62,6 +62,9 @@ const pusher = new Pusher(KEY, {
   disableStats: true,
 });
 
+pusher.connection.bind('state_change', ({ current }) => console.log(`connection: ${current}`));
+pusher.connection.bind('error', (error) => console.log('connection error:', JSON.stringify(error)));
+
 try {
   const channel = pusher.subscribe(`board.${board.id}`);
   await new Promise((resolve, reject) => {

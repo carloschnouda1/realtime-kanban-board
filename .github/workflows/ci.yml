@@ -50,7 +50,9 @@ jobs:
           PY
 
       - name: Tests
-        run: php artisan test
+        run: |
+          set -o pipefail
+          php artisan test 2>&1 | tee /tmp/tests.log || { echo "::error title=test output::$(grep -v '^\s*$' /tmp/tests.log | tail -c 5000 | sed ':a;N;$!ba;s/\n/%0A/g')"; exit 1; }
 
   web:
     name: Web (typecheck, tests, build)
@@ -85,7 +87,11 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Start the stack
+        # The Node client in the e2e script sends no Origin header, so the
+        # origin allow-list is opened up for this run only.
         run: docker compose up -d --build
+        env:
+          REVERB_ALLOWED_ORIGINS: '*'
 
       - name: Install e2e dependencies
         run: npm ci

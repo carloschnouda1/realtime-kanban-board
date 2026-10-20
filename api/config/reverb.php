@@ -49,8 +49,13 @@ return [
                     'scheme' => env('REVERB_SCHEME', 'https'),
                     'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
                 ],
-                // Origins allowed to open a WebSocket. Comma-separated, "*" allows all.
-                'allowed_origins' => array_filter(explode(',', env('REVERB_ALLOWED_ORIGINS', '*'))),
+                // Origins allowed to open a WebSocket. Comma-separated; "*" allows all.
+                // Reverb matches the *hostname* of the Origin header, so a full URL such
+                // as "http://localhost:3000" is reduced to "localhost".
+                'allowed_origins' => array_values(array_filter(array_map(
+                    fn (string $origin) => parse_url($origin, PHP_URL_HOST) ?: trim($origin),
+                    explode(',', env('REVERB_ALLOWED_ORIGINS', '*')),
+                ))),
                 'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
                 'activity_timeout' => env('REVERB_APP_ACTIVITY_TIMEOUT', 30),
                 'max_connections' => env('REVERB_APP_MAX_CONNECTIONS'),
