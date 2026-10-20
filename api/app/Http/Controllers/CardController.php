@@ -10,6 +10,8 @@ use App\Http\Resources\CardResource;
 use App\Models\BoardColumn;
 use App\Models\Card;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CardController extends Controller
 {
@@ -17,23 +19,23 @@ class CardController extends Controller
     {
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'description' => ['nullable', 'string', 'max:5000'],
         ]);
 
-        $position = $column->cards()->max('position') + 1;
+        $position = ($column->cards()->max('position') ?? -1) + 1;
 
         $card = $column->cards()->create([...$data, 'position' => $position]);
 
         broadcast(new CardCreated($card))->toOthers();
 
-        return new CardResource($card);
+        return (new CardResource($card))->response()->setStatusCode(201);
     }
 
     public function update(Request $request, Card $card)
     {
         $data = $request->validate([
             'title' => ['sometimes', 'required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'description' => ['nullable', 'string', 'max:5000'],
         ]);
 
         $card->update($data);
@@ -46,17 +48,61 @@ class CardController extends Controller
     public function move(Request $request, Card $card)
     {
         $data = $request->validate([
-            'board_column_id' => ['required', 'exists:board_columns,id'],
+            'board_column_id' => ['required', 'integer', 'exists:board_columns,id'],
             'position' => ['required', 'integer', 'min:0'],
         ]);
 
-        $card->update($data);
+        $source = $card->boardColumn;
+        $destination = BoardColumn::findOrFail($data['board_column_id']);
 
-        $boardId = $card->boardColumn()->first()->board_id;
+        // A card may only move between columns of its own board.
+        if ($destination->board_id !== $source->board_id) {
+            throw ValidationException::withMessages([
+                'board_column_id' => 'The column belongs to a different board.',
+            ]);
+        }
 
-        broadcast(new CardMoved($card->fresh(), $boardId))->toOthers();
+        $changed = DB::transaction(function () use ($card, $source, $destination, $data) {
+            // Take the card out of its current ordering, then insert it at the
+            // requested index (clamped to the end of the list).
+            $sourceIds = $source->cards()->pluck('id')->reject(fn ($id) => $id === $card->id)->values();
+            $destinationIds = $source->is($destination)
+                ? $sourceIds
+                : $destination->cards()->pluck('id');
 
-        return new CardResource($card);
+            $index = min($data['position'], $destinationIds->count());
+            $destinationIds = $destinationIds->splice(0, $index)
+                ->push($card->id)
+                ->concat($destinationIds)
+                ->values();
+
+            $card->update(['board_column_id' => $destination->id]);
+
+            $affected = $source->is($destination)
+                ? [$destination->id => $destinationIds]
+                : [$source->id => $sourceIds, $destination->id => $destinationIds];
+
+            foreach ($affected as $ids) {
+                foreach ($ids as $position => $id) {
+                    Card::whereKey($id)->update(['position' => $position]);
+                }
+            }
+
+            return array_keys($affected);
+        });
+
+        $columns = BoardColumn::with('cards')
+            ->whereIn('id', $changed)
+            ->get()
+            ->map(fn (BoardColumn $column) => [
+                'id' => $column->id,
+                'cards' => CardResource::collection($column->cards)->resolve(),
+            ])
+            ->all();
+
+        broadcast(new CardMoved($destination->board_id, $columns))->toOthers();
+
+        return response()->json(['data' => ['columns' => $columns]]);
     }
 
     public function destroy(Card $card)

@@ -2,19 +2,26 @@
 
 namespace App\Events;
 
-use App\Http\Resources\CardResource;
-use App\Models\Card;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
 
-class CardMoved implements ShouldBroadcast
+/**
+ * Broadcast after a card changes column and/or position.
+ *
+ * Moving a card renumbers its neighbours, so the payload carries the complete
+ * card list of every column that changed. Clients replace those columns
+ * wholesale instead of trying to replay the reordering themselves.
+ */
+class CardMoved implements ShouldBroadcastNow
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable, InteractsWithSockets;
 
-    public function __construct(public Card $card, public string $boardId)
+    /**
+     * @param  array<int, array{id: int, cards: array<int, array<string, mixed>>}>  $columns
+     */
+    public function __construct(public string $boardId, public array $columns)
     {
     }
 
@@ -30,6 +37,6 @@ class CardMoved implements ShouldBroadcast
 
     public function broadcastWith(): array
     {
-        return ['card' => (new CardResource($this->card))->resolve()];
+        return ['columns' => $this->columns];
     }
 }
