@@ -128,7 +128,7 @@ docker-compose.yml   api + reverb + web
 
 ## Scope
 
-This is a focused demo, not a product: no accounts, no card editing UI beyond title, no horizontal column reordering, and SQLite as the database. Moving to Postgres, adding auth for private boards and scaling Reverb across servers (`REVERB_SCALING_ENABLED` with Redis) are the natural next steps.
+This is a focused demo, not a product: no accounts, no column reordering or renaming, and SQLite as the database. Moving to Postgres, adding auth for private boards and scaling Reverb across servers (`REVERB_SCALING_ENABLED` with Redis) are the natural next steps.
 
 ## License
 
