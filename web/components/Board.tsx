@@ -2,7 +2,8 @@
 
 import { DndContext, DragEndEvent, PointerSensor, closestCorners, useSensor, useSensors } from '@dnd-kit/core';
 import { Board as BoardType } from '@/lib/types';
-import { createCard, createColumn, deleteCard, moveCard } from '@/lib/api';
+import { createCard, createColumn, deleteCard, getBoard, moveCard } from '@/lib/api';
+import { applyColumnCards, upsertColumn } from '@/lib/board-state';
 import Column from './Column';
 import AddColumnForm from './AddColumnForm';
 
@@ -56,9 +57,13 @@ export default function Board({ board, setBoard }: Props) {
       return { ...prev, columns };
     });
 
-    moveCard(card.id, destColumn.id, Math.max(destIndex, 0)).catch((err) => {
-      console.error('Failed to persist card move', err);
-    });
+    moveCard(card.id, destColumn.id, Math.max(destIndex, 0))
+      .then((result) => setBoard((prev) => applyColumnCards(prev, result.columns)))
+      .catch((err) => {
+        // The optimistic move didn't stick: reload the authoritative state.
+        console.error('Failed to persist card move', err);
+        getBoard(board.id).then((fresh) => setBoard(() => fresh));
+      });
   }
 
   async function handleAddCard(columnId: number, title: string) {
@@ -79,7 +84,7 @@ export default function Board({ board, setBoard }: Props) {
 
   async function handleAddColumn(name: string) {
     const column = await createColumn(board.id, name);
-    setBoard((prev) => ({ ...prev, columns: [...prev.columns, { ...column, cards: [] }] }));
+    setBoard((prev) => upsertColumn(prev, column));
   }
 
   return (

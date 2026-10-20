@@ -20,7 +20,7 @@ class BoardController extends Controller
             $board->columns()->create(['name' => $name, 'position' => $index]);
         }
 
-        return new BoardResource($board->load('columns.cards'));
+        return (new BoardResource($board->load('columns.cards')))->response()->setStatusCode(201);
     }
 
     public function show(Board $board)

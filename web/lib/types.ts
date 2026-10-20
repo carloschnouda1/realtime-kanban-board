@@ -18,3 +18,8 @@ export interface Board {
   name: string;
   columns: BoardColumn[];
 }
+
+/** Response of PATCH /cards/{id}/move: the full card list of every column that changed. */
+export interface MoveResult {
+  columns: { id: number; cards: CardItem[] }[];
+}

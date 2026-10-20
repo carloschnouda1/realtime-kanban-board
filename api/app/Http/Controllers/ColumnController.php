@@ -15,7 +15,7 @@ class ColumnController extends Controller
             'name' => ['required', 'string', 'max:255'],
         ]);
 
-        $position = $board->columns()->max('position') + 1;
+        $position = ($board->columns()->max('position') ?? -1) + 1;
 
         $column = $board->columns()->create([
             'name' => $data['name'],
@@ -24,6 +24,6 @@ class ColumnController extends Controller
 
         broadcast(new ColumnCreated($column))->toOthers();
 
-        return new BoardColumnResource($column);
+        return (new BoardColumnResource($column))->response()->setStatusCode(201);
     }
 }

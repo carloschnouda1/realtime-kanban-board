@@ -1,13 +1,19 @@
-import { Board, BoardColumn, CardItem } from './types';
+import { getEcho } from './echo';
+import { Board, BoardColumn, CardItem, MoveResult } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  // Laravel's `broadcast(...)->toOthers()` skips the connection named in this
+  // header, so the tab that made the change doesn't receive its own event.
+  const socketId = typeof window !== 'undefined' ? getEcho().socketId() : undefined;
+
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
+      ...(socketId ? { 'X-Socket-ID': socketId } : {}),
       ...options.headers,
     },
   });
@@ -50,8 +56,8 @@ export function updateCard(cardId: number, data: Partial<Pick<CardItem, 'title' 
   return request<CardItem>(`/cards/${cardId}`, { method: 'PATCH', body: JSON.stringify(data) });
 }
 
-export function moveCard(cardId: number, boardColumnId: number, position: number): Promise<CardItem> {
-  return request<CardItem>(`/cards/${cardId}/move`, {
+export function moveCard(cardId: number, boardColumnId: number, position: number): Promise<MoveResult> {
+  return request<MoveResult>(`/cards/${cardId}/move`, {
     method: 'PATCH',
     body: JSON.stringify({ board_column_id: boardColumnId, position }),
   });

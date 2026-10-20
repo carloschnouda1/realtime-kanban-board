@@ -6,17 +6,15 @@ use App\Http\Resources\CardResource;
 use App\Models\Card;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class CardCreated implements ShouldBroadcast
+class CardCreated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public Card $card)
-    {
-    }
+    public function __construct(public Card $card) {}
 
     public function broadcastOn(): array
     {
