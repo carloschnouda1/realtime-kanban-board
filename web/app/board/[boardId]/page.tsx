@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { getBoard } from '@/lib/api';
 import { getEcho } from '@/lib/echo';
-import { Board as BoardType, BoardColumn, CardItem } from '@/lib/types';
+import { applyColumnCards, upsertColumn } from '@/lib/board-state';
+import { Board as BoardType, BoardColumn, CardItem, MoveResult } from '@/lib/types';
 import Board from '@/components/Board';
 
 export default function BoardPage() {
@@ -52,7 +53,7 @@ export default function BoardPage() {
 
     channel.listen('.card.created', (e: { card: CardItem }) => upsertCard(e.card));
     channel.listen('.card.updated', (e: { card: CardItem }) => upsertCard(e.card));
-    channel.listen('.card.moved', (e: { card: CardItem }) => upsertCard(e.card));
+    channel.listen('.card.moved', (e: MoveResult) => updateBoard((prev) => applyColumnCards(prev, e.columns)));
 
     channel.listen('.card.deleted', (e: { cardId: number }) => {
       updateBoard((prev) => ({
@@ -65,7 +66,7 @@ export default function BoardPage() {
     });
 
     channel.listen('.column.created', (e: { column: BoardColumn }) => {
-      updateBoard((prev) => ({ ...prev, columns: [...prev.columns, e.column] }));
+      updateBoard((prev) => upsertColumn(prev, e.column));
     });
 
     return () => {
